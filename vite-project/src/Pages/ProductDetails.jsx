@@ -1,48 +1,80 @@
-import React, { useState, useEffect } from 'react';
-import { useParams,Link } from 'react-router-dom';
+import React, { useState, useEffect, useContext } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import AxiosInstance from '../../Axios_instance';
+import { useDispatch,useSelector } from 'react-redux';
+import { addToCart } from '../Redux/actions';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCartShopping } from '@fortawesome/free-solid-svg-icons';
+
 
 const ProductDetails = () => {
-  
   const { productId } = useParams();
-  const [product, setProduct] = useState();
+  const [product, setProduct] = useState(null);
   const axios = AxiosInstance();
+  const dispatch = useDispatch();
+  const cartItems = useSelector(state => state.cart.cartItems);
 
   useEffect(() => {
-    axios.get('products_list/')
+    axios.get(`products_list/`)
       .then(response => {
         const foundProduct = response.data.find(prod => prod.id === parseInt(productId));
         setProduct(foundProduct);
       })
       .catch(error => {
-        console.error('Error fetching products:', error);
+        console.error('Error fetching product details:', error);
       });
-  }, []);
+  }, [productId]);
 
-  
+  const addToCartHandler = (product) => {
+    console.log("Before adding to cart:", cartItems); // Log before dispatching action
+    dispatch(addToCart(product));
+  };
+
+  useEffect(() => {
+    console.log("After adding to cart:", cartItems);
+    localStorage.setItem('cartItems',JSON.stringify(cartItems))
+  }, [cartItems]);
 
   if (!product) {
     return <p>Loading...</p>;
   }
 
   return (
-    <div className="flex flex-col lg:flex-row justify-center items-start lg:items-center">
-  {/* Left column for the image */}
-  <div>
-    <img src={product.image} alt={product.title} className="max-w-xs h-auto" />
-  </div>
-  {/* Right column for the product details */}
-  <div className="lg:w-1/2 flex flex-col justify-center">
-    {/* Product details */}
-    <h2 className="text-3xl font-bold mb-4">{product.title}</h2>
-    <p className="text-lg mb-4">{product.description}</p>
-    <p className="text-lg mb-4">Price: ${product.price}</p>  
-    {/* Add to cart button */}
-    <Link to={`/cart/${productId}`} className="bg-blue-800 text-black px-6 py-3 rounded-lg text-lg hover:bg-blue-600">
-  Go to Cart
-</Link>
-  </div>
-</div>
+    <section className="product-details spad">
+      <div className="container">
+        <div className="row">
+          <div className="col-lg-6 col-md-6">
+            <div className="card">
+              <img className="card-img-top" src={product.image} alt={product.title} />
+            </div>
+          </div>
+          <div className="col-lg-6 col-md-6">
+            <div className="card-body">
+              <h3 className="card-title">{product.title}</h3>
+              <div className="card-text">Rs: {product.price}</div>
+              <p className="card-text">{product.description}</p>
+              <Link to='/'>
+              <button onClick={() => addToCartHandler(product)} className="btn btn-primary">ADD TO CART</button> {/* Use addToCart function */}
+              </Link>
+              <Link to={`/cart`} className="btn btn-secondary ml-2"><FontAwesomeIcon icon={faCartShopping} /></Link>
+              <ul className="list-group mt-3">
+                <li className="list-group-item"><b>Availability:</b> In Stock</li>
+                <li className="list-group-item"><b>Shipping:</b> 01 day shipping. Free pickup today</li>
+                <li className="list-group-item"><b>Weight:</b> 0.5 kg</li>
+                <li className="list-group-item"><b>Share on:</b>
+                  <div className="share">
+                    <a href="#" className="btn btn-sm btn-outline-primary mr-1"><i className="fa fa-facebook"></i></a>
+                    <a href="#" className="btn btn-sm btn-outline-info mr-1"><i className="fa fa-twitter"></i></a>
+                    <a href="#" className="btn btn-sm btn-outline-danger mr-1"><i className="fa fa-instagram"></i></a>
+                    <a href="#" className="btn btn-sm btn-outline-warning"><i className="fa fa-pinterest"></i></a>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 };
 

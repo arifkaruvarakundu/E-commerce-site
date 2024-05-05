@@ -1,38 +1,53 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import AxiosInstance from '../../Axios_instance';
+import {useEffect} from 'react';
+import { Link } from 'react-router-dom';
+import { useSelector,useDispatch } from 'react-redux';
+import { removeFromCart, updateQuantity } from '../Redux/actions'
+
 
 const CartPage = () => {
-  const { productId } = useParams();
-  const [cartItems, setCartItems] = useState([]);
-  const axios = AxiosInstance();
+  // const cartItems = useSelector(state => state.cart.cartItems);
+  const cartItems = JSON.parse(localStorage.getItem('cartItems'));
+  console.log("Current cartItems:", cartItems);
+  const dispatch = useDispatch();
+
 
   useEffect(() => {
-    axios.get('products_list/')
-      .then(response => {
-        const foundProduct = response.data.find(prod => prod.id === parseInt(productId));
-        setCartItems([foundProduct]);
-      })
-      .catch(error => {
-        console.error('Error fetching products:', error);
-      });
-  }, []);
+    console.log("Current cartItems:", cartItems);
+    
+  }, [cartItems]);
+
+  // useEffect(()=>{
+  // const cartItems = JSON.parse(localStorage.getItem('cartItems'));
+  // console.log('from local',cartItems)
+  // },[cartItems])
+
+  
 
   // Function to update the quantity of an item in the cart
-  const updateQuantity = (itemId, newQuantity) => {
-    if (newQuantity <= 0) {
-      newQuantity = 1;
-    }
-    const updatedCart = cartItems.map(item =>
-      item.id === itemId ? { ...item, quantity: newQuantity } : item
-    );
-    setCartItems(updatedCart);
-  };
+  const handleQuantityChange = (itemId, newQuantity) => {
+  if (newQuantity > 0) {
+    dispatch(updateQuantity(itemId, newQuantity));
+
+    // Get current cart items from localStorage
+    const storedCartItems = JSON.parse(localStorage.getItem('cartItems'));
+
+    // Update quantity of the item in localStorage
+    const updatedCartItems = storedCartItems.map(item => {
+      if (item.id === itemId) {
+        return { ...item, quantity: newQuantity };
+      }
+      return item;
+    });
+
+    // Update localStorage with the updated cart items and new quantity
+    localStorage.setItem('cartItems', JSON.stringify(updatedCartItems));
+    localStorage.setItem(`quantity_${itemId}`, newQuantity);
+  }
+};
 
   // Function to remove an item from the cart
-  const removeFromCart = (itemId) => {
-    const updatedCart = cartItems.filter(item => item.id !== itemId);
-    setCartItems(updatedCart);
+  const handleRemoveFromCart = (itemId) => {
+    dispatch(removeFromCart(itemId));
   };
 
   // Function to calculate the total price of the cart
@@ -41,104 +56,72 @@ const CartPage = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          <div className="px-4 py-5 sm:px-6">
-            <h1 className="text-3xl font-semibold text-gray-900">Cart</h1>
-          </div>
-          <div className="border-t border-gray-200">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Image
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Name
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Price
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Quantity
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-800">
-                {cartItems.map((item) => (
-                  <tr key={item.id} className="flex items-center justify-between py-6">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <img
-                        className="w-full h-32 object-cover rounded-full mb-4"
-                        src={item.image}
-                        alt={item.title}
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {item.title}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${item.price}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.stock < 1 ? (
-                        <span className="text-red-500">Out of Stock</span>
-                      ) : (
-                        <div className="flex items-center">
-                          <button
-                            className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          >
-                            -
-                          </button>
-                          <input
-                            type="number"
-                            className="form-input w-16 text-center mx-2"
-                            value={item.quantity}
-                            onChange={(e) =>
-                              updateQuantity(item.id, parseInt(e.target.value))
-                            }
-                          />
-                          <button
-                            className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          >
-                            +
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <button className="text-red-500" onClick={() => removeFromCart(item.id)}>Remove</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="px-4 py-4 bg-gray-50 sm:px-6">
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-semibold text-gray-900">Total: ${calculateTotalPrice()}</span>
-              <button className="bg-blue-500 text-black px-6 py-3 rounded-md text-lg hover:bg-blue-600">Checkout</button>
+    <div className="bg0 p-t-75 p-b-85">
+      <div className="container">
+        <div className="row">
+          <div className="col-lg-10 col-xl-7 m-lr-auto m-b-100">
+            <div className="m-l-25 m-r--38 m-lr-0-xl">
+              <div className="table-responsive">
+                <table className="table table-striped">
+                  <thead style={{ padding: '100px' }}>
+                    <tr>
+                      <th>Image</th>
+                      <th>Name</th>
+                      <th>Price</th>
+                      <th>Quantity</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cartItems.map(item => (
+                      <tr key={item.id}>
+                        <td>
+                          <div className="how-itemcart1">
+                            <img src={item.image} alt="Product Image" style={{ height: '60px', width: '60px' }} />
+                          </div>
+                        </td>
+                        <td>{item.title}</td>
+                        <td>${item.price}</td>
+                        <td>
+                          {item.stock < 1 ? (
+                            <span className="text-danger"></span>
+                          ) : (
+                            <div style={{ display: 'inline-block' }}>
+                              <div style={{ display: 'flex', alignItems: 'center' }}>
+                                
+                              <input 
+                                type="number" 
+                                className="form-control quantity-input" 
+                                value={item.quantity} 
+                                onChange={(e) => {
+                                  const newQuantity = parseInt(e.target.value);
+                                  if (newQuantity > 0) {
+                                    handleQuantityChange(item.id, newQuantity);
+                                  }
+                                }} 
+                              />
+
+                                
+                              </div>
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          <button className="btn btn-sm btn-danger" onClick={() => handleRemoveFromCart(item.id)}>Remove</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="px-4 py-4 bg-gray-50 sm:px-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-semibold text-gray-900">Total: ${calculateTotalPrice()}</span>
+                  <Link to = '/invoice'>
+                  <button className="btn btn-sm btn-primary text-black px-6 py-3 rounded-md text-lg hover:bg-blue-600 ">Checkout</button>
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>
