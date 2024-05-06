@@ -1,4 +1,4 @@
-import {useEffect} from 'react';
+import {useEffect,useState} from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector,useDispatch } from 'react-redux';
 import { removeFromCart, updateQuantity } from '../Redux/actions'
@@ -6,9 +6,16 @@ import { removeFromCart, updateQuantity } from '../Redux/actions'
 
 const CartPage = () => {
   // const cartItems = useSelector(state => state.cart.cartItems);
-  const cartItems = JSON.parse(localStorage.getItem('cartItems'));
+  const [cartItems, setCartItems] = useState(JSON.parse(localStorage.getItem('cartItems')) || []);
+  const [totalPrice, setTotalPrice] = useState(0);
+
   console.log("Current cartItems:", cartItems);
   const dispatch = useDispatch();
+
+  // Function to calculate the total price of the cart
+  const calculateTotalPrice = () => {
+    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+  };
 
 
   useEffect(() => {
@@ -16,23 +23,19 @@ const CartPage = () => {
     
   }, [cartItems]);
 
-  // useEffect(()=>{
-  // const cartItems = JSON.parse(localStorage.getItem('cartItems'));
-  // console.log('from local',cartItems)
-  // },[cartItems])
+  useEffect(() => {
+    const totalPrice = calculateTotalPrice();
+    setTotalPrice(totalPrice);
+  }, [cartItems]);
 
   
-
   // Function to update the quantity of an item in the cart
-  const handleQuantityChange = (itemId, newQuantity) => {
+const handleQuantityChange = (itemId, newQuantity) => {
   if (newQuantity > 0) {
     dispatch(updateQuantity(itemId, newQuantity));
 
-    // Get current cart items from localStorage
-    const storedCartItems = JSON.parse(localStorage.getItem('cartItems'));
-
-    // Update quantity of the item in localStorage
-    const updatedCartItems = storedCartItems.map(item => {
+    // Update quantity of the item in the cart
+    const updatedCartItems = cartItems.map(item => {
       if (item.id === itemId) {
         return { ...item, quantity: newQuantity };
       }
@@ -40,20 +43,40 @@ const CartPage = () => {
     });
 
     // Update localStorage with the updated cart items and new quantity
-    localStorage.setItem('cartItems', JSON.stringify(updatedCartItems));
+    updateCartItemsInLocalStorage(updatedCartItems);
     localStorage.setItem(`quantity_${itemId}`, newQuantity);
+
+    // Update cartItems state
+    setCartItems(updatedCartItems);
+
+    // Calculate total price after quantity change
+    const totalPrice = calculateTotalPrice(updatedCartItems);
+    setTotalPrice(totalPrice);
   }
 };
 
+
   // Function to remove an item from the cart
   const handleRemoveFromCart = (itemId) => {
+    // Dispatch action to remove item from Redux store
     dispatch(removeFromCart(itemId));
-  };
 
-  // Function to calculate the total price of the cart
-  const calculateTotalPrice = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
+    // Update cartItems state and localStorage immediately
+    const updatedCartItems = cartItems.filter(item => item.id !== itemId);
+    setCartItems(updatedCartItems);
+    updateCartItemsInLocalStorage(updatedCartItems);
+
+     // Remove quantity of the item from localStorage
+    localStorage.removeItem(`quantity_${itemId}`);
+   };
+  
+
+  
+
+  function updateCartItemsInLocalStorage(items) {
+    localStorage.setItem('cartItems', JSON.stringify(items));
+    setTotalPrice(calculateTotalPrice(items));
+  }
 
   return (
     <div className="bg0 p-t-75 p-b-85">

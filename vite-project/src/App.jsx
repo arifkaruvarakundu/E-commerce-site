@@ -7,6 +7,8 @@ import ProductDetails from './Pages/ProductDetails';
 import CartPage from './Pages/Cart';
 import Invoice from './Pages/Invoice';
 import 'bootstrap/dist/css/bootstrap.css';
+import SignUp from './Pages/Signup';
+import SignIn from './Pages/SignIn';
 
 
 function App() {
@@ -17,6 +19,8 @@ function App() {
         <Router>
           <Routes>
             <Route path="/" element={<ProductList />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/signIn" element={<SignIn />} />
             <Route path="/product/:productId" element ={<ProductDetails/>}/>
             
             <Route path="/cart" element={<CartPage/>}/>
