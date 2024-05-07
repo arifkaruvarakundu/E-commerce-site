@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link,useNavigate} from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
+import { useDispatch } from 'react-redux';
+import { setIsAuthenticated } from '../../src/Redux/authslice';
 
 
 import AxiosInstance from '../../Axios_instance';
@@ -13,8 +15,8 @@ function SignIn() {
 
   
   const axios=AxiosInstance()
-
   const navigateTo = useNavigate()
+  const dispatch = useDispatch()
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,22 +32,12 @@ function SignIn() {
     axios
       .post('login/', formData)
       .then((response) => {
-        
-        console.log('Sign-in successful', response.data);
-
-        
-
-        localStorage.setItem('user', JSON.stringify(response.data));
-        localStorage.setItem('username', response.data.username);
-        localStorage.setItem('user_id', response.data.id);
-
-        
-        
-
+        localStorage.setItem('username', response.data.user.username);
+        localStorage.setItem('email', response.data.user.email);
+        dispatch(setIsAuthenticated());
         navigateTo('/');
         toast.success('You SignedIn successfully',{
           autoClose: 1000,});
-
       })
       .catch((error) => {
         

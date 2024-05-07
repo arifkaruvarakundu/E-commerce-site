@@ -1,14 +1,13 @@
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Product,Order
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView,RetrieveAPIView
 from rest_framework.views import APIView
-from .serializers import ProductSerializer
-from .serializers import OrderSerializer
+from .serializers import ProductSerializer,OrderSerializer, UserSerializer,OrderRetrieveSerializer
 from rest_framework.permissions import AllowAny
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from .serializers import UserSerializer
+
 # Create your views here.
 
 class ProductListView(ListAPIView):
@@ -17,16 +16,22 @@ class ProductListView(ListAPIView):
 
 class OrderCreateView(APIView):
     def post(self, request, *args, **kwargs):
+        user_email = request.data['user_email']
+        user_object = User.objects.get(email=user_email)
+        user = user_object.id
+        request.data['user'] = user
         serializer = OrderSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            order = serializer.save()
+            serialized_order = OrderSerializer(order)  # Serialize the entire order object
+            return Response(serialized_order.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# class OrderListView(ListAPIView):
-#     queryset = Order.objects.all()
-#     serializer_class = OrderSerializer
+class OrderRetrieveView(RetrieveAPIView):
+    queryset = Order.objects.all()
+    serializer_class = OrderRetrieveSerializer
+    lookup_field = 'id'
 
 
 class SignupAPIView(APIView):
@@ -43,16 +48,14 @@ class LoginAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, format=None):
-        print("@@@@@@@@######",request.data)
         username = request.data.get('username')
         print("username:",username)
         password = request.data.get('password')
-        print("password:",password)
         user = authenticate(request, username=username, password=password)
-        print("user:^^^^^^^^^^^^^^",user)
         if user is not None:
             login(request, user)
-            return Response({"message": "Login successful!"}, status=status.HTTP_200_OK)
+            serializer = UserSerializer(user)
+            return Response({"message": "Login successful!", "user": serializer.data}, status=status.HTTP_200_OK)
         return Response({"message": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 class LogoutAPIView(APIView):

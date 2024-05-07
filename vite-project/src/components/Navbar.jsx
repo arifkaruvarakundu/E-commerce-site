@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 
+import { Link } from 'react-router-dom';
+import { useSelector,useDispatch } from 'react-redux';
+import { setNotAuthenticated } from '../../src/Redux/authslice';
+import AxiosInstance from '../../Axios_instance';
 function Navbar() {  
   // State to track user authentication status
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
+  const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
+  const axios = AxiosInstance()
+  const dispatch = useDispatch();
   // Function to handle user sign out
   const handleSignOut = async () => {
     try {
@@ -12,7 +15,8 @@ function Navbar() {
       const response = await axios.post('logout/');
       if (response.status === 200) {
         // If logout successful, update authentication status
-        setIsAuthenticated(false);
+        localStorage.clear()
+        dispatch(setNotAuthenticated());
       } else {
         // Handle error
         console.error('Failed to logout:', response.statusText);
@@ -43,7 +47,6 @@ function Navbar() {
           <div>
             {isAuthenticated ? (
               <div className="flex items-center">
-                <span className="text-white mr-4">User Avatar</span>
                 <button className="text-white hover:text-gray-300" onClick={handleSignOut}>
                   Sign Out
                 </button>

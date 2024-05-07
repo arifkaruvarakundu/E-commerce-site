@@ -1,10 +1,11 @@
 import React from 'react';
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import AxiosInstance from '../../Axios_instance';
 
 function Invoice() {
     // Retrieve cartItems from local storage
     const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+    const [order, setOrder] = useState(null);
     const axios = AxiosInstance()    
     // Function to calculate total price
     const calculateTotalPrice = () => {
@@ -18,27 +19,27 @@ function Invoice() {
 
     
 
-    const createOrder = async () => {
-      try {
-        const response = await axios.post('/orders/', {
-            total_price: totalPrice,
-            // You can include other order data if needed
-        });
-        if (response.status === 200 || response.status === 201) {
-            // Order created successfully, redirect to another page or perform other actions
-            history.push('/order-confirmation');
-        } else {
-            console.error('Failed to create order:', response.statusText);
-            // Handle error accordingly
+    useEffect(() => {
+        // Retrieve order_id from local storage
+        const order_id = localStorage.getItem('order_id');
+        console.log("order_id",order_id)
+    
+        // Check if order_id exists
+        if (order_id) {
+          axios.get(`order/${order_id}/`)
+            .then(response => {
+              // Set the fetched order to state
+              console.log('response',response.data)
+              setOrder(response.data);
+            })
+            .catch(error => {
+              console.error('Error fetching order details:', error);
+            });
         }
-    } catch (error) {
-        console.error('Error creating order:', error);
-        // Handle error accordingly
-    }
-};
+    }, []);
 
   const handleCheckout = () => {
-    createOrder();
+    
   };
 
     
@@ -49,12 +50,14 @@ function Invoice() {
                     <h2 className="mb-0">Invoice</h2>
                 </div>
                 <div className="card-body">
+                {order && (
+                <>
                     <div className="row mb-3">
                         <div className="col-sm">
-                            <strong>Invoice Number:</strong> INV-123456
+                            <strong>Invoice Number:</strong> {order.invoice_number}
                         </div>
                         <div className="col-sm">
-                            <strong>Invoice Date:</strong> January 1, 2024
+                            <strong>Invoice Date:</strong> {order.invoice_date}
                         </div>
                     </div>
                     <table className="table">
@@ -83,8 +86,11 @@ function Invoice() {
                             </tr>
                         </tfoot>
                     </table>
-                    <button className="btn btn-primary" onClick={handleCheckout}>Checkout</button>
+                    <button className="btn btn-primary" onClick={handleCheckout}>Download Inoice</button>
+                    </>
+                    )}
                 </div>
+                
             </div>
         </div>
     );

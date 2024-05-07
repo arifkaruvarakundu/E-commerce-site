@@ -12,7 +12,7 @@ const ProductDetails = () => {
   const [product, setProduct] = useState(null);
   const axios = AxiosInstance();
   const dispatch = useDispatch();
-  const cartItems = useSelector(state => state.cart.cartItems);
+  const cartItems = useSelector(state => state.cart.cart.cartItems);
 
   useEffect(() => {
     axios.get(`products_list/`)
