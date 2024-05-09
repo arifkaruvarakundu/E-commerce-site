@@ -25,6 +25,7 @@ SECRET_KEY = 'django-insecure-#&v@(@0rr$1k=ynab+p7@oae@$_ehr86v_ei6)bow^3$m!tdzc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+
 ALLOWED_HOSTS = []
 
 
@@ -39,6 +40,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'product',
+    'order',
+    'django_celery_results',
+    'django_celery_beat',
+    
 ]
 
 MIDDLEWARE = [
@@ -171,3 +176,10 @@ CORS_ALLOW_METHODS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+CELERY_TIMEZONE = 'Asia/Kolkata'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'

@@ -1,38 +1,23 @@
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Product,Order
-from rest_framework.generics import ListAPIView,RetrieveAPIView
+from .models import Product,Order,OrderItem
+from rest_framework.generics import ListAPIView
 from rest_framework.views import APIView
-from .serializers import ProductSerializer,OrderSerializer, UserSerializer,OrderRetrieveSerializer
+from .serializers import ProductSerializer, UserSerializer
 from rest_framework.permissions import AllowAny
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import User
+from django.http import HttpResponse
+from django.views import View
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+
 
 # Create your views here.
 
 class ProductListView(ListAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-
-class OrderCreateView(APIView):
-    def post(self, request, *args, **kwargs):
-        user_email = request.data['user_email']
-        user_object = User.objects.get(email=user_email)
-        user = user_object.id
-        request.data['user'] = user
-        serializer = OrderSerializer(data=request.data)
-        if serializer.is_valid():
-            order = serializer.save()
-            serialized_order = OrderSerializer(order)  # Serialize the entire order object
-            return Response(serialized_order.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class OrderRetrieveView(RetrieveAPIView):
-    queryset = Order.objects.all()
-    serializer_class = OrderRetrieveSerializer
-    lookup_field = 'id'
-
 
 class SignupAPIView(APIView):
     permission_classes = [AllowAny]
@@ -62,3 +47,45 @@ class LogoutAPIView(APIView):
     def post(self, request, format=None):
         logout(request)
         return Response({"message": "Logout successful!"}, status=status.HTTP_200_OK)
+    
+
+    
+class GenerateInvoicePDF(View):
+    def get(self,request, order_id):
+        # Get order and related items
+        order = Order.objects.get(pk=order_id)
+        order_items = OrderItem.objects.filter(order=order)
+        # Create response object
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="invoice_{order.invoice_number}.pdf"'
+        # Create PDF document
+        doc = SimpleDocTemplate(response, pagesize=letter)
+        elements = []
+
+        # Order details
+        data = [
+            ['Invoice Number:', order.invoice_number],
+            ['Invoice Date:', order.invoice_date.strftime('%Y-%m-%d')],
+            ['Customer:', order.user.username],
+            ['Total Price:', f'${order.total_price}'],
+        ]
+        table = Table(data, colWidths=[150, 200])
+        table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+        ]))
+        elements.append(table)
+        elements.append(Table([['']], colWidths=[None]))
+
+        # Order items table
+        data = [['Product', 'Quantity', 'Price']]
+        for item in order_items:
+            data.append([item.product.title, item.quantity, f'${item.price_at_purchase}'])
+        table = Table(data)
+        elements.append(table)
+
+        # Build PDF document
+        doc.build(elements)
+        return response
+    
+

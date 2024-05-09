@@ -1,36 +1,20 @@
-import React from 'react';
-import { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import AxiosInstance from '../../Axios_instance';
 
 function Invoice() {
-    // Retrieve cartItems from local storage
     const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
     const [order, setOrder] = useState(null);
-    const axios = AxiosInstance()    
-    // Function to calculate total price
-    const calculateTotalPrice = () => {
-        let totalPrice = 0;
-        cartItems.forEach(item => {
-            totalPrice += item.price * item.quantity;
-        });
-        return totalPrice.toFixed(2);
-    };
-    const [totalPrice, setTotalPrice] = useState(calculateTotalPrice());
-
-    
+    const axios = AxiosInstance();
+    const [totalPrice, setTotalPrice] = useState(0);
 
     useEffect(() => {
-        // Retrieve order_id from local storage
         const order_id = localStorage.getItem('order_id');
-        console.log("order_id",order_id)
-    
-        // Check if order_id exists
         if (order_id) {
           axios.get(`order/${order_id}/`)
             .then(response => {
-              // Set the fetched order to state
-              console.log('response',response.data)
               setOrder(response.data);
+              console.log(response.data)
+              setTotalPrice(calculateTotalPrice(cartItems));
             })
             .catch(error => {
               console.error('Error fetching order details:', error);
@@ -38,11 +22,31 @@ function Invoice() {
         }
     }, []);
 
-  const handleCheckout = () => {
-    
-  };
+    const calculateTotalPrice = (items) => {
+        let totalPrice = 0;
+        items.forEach(item => {
+            totalPrice += item.price * item.quantity;
+        });
+        return totalPrice.toFixed(2);
+    };
 
-    
+    const handlePdfGeneration = () => {
+        if (order) {
+            axios.get(`generate_invoice_pdf/${order.id}`, { responseType: 'blob' })
+                .then(response => {
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', `invoice_${order.invoice_number}.pdf`);
+                    document.body.appendChild(link);
+                    link.click();
+                })
+                .catch(error => {
+                    console.error('Error downloading PDF:', error);
+                });
+        }
+    };
+
     return (
         <div className="container mt-5">
             <div className="card">
@@ -82,15 +86,14 @@ function Invoice() {
                         <tfoot>
                             <tr>
                                 <td colSpan="3" className="text-right"><strong>Total:</strong></td>
-                                <td><strong>${calculateTotalPrice()}</strong></td>
+                                <td><strong>${totalPrice}</strong></td>
                             </tr>
                         </tfoot>
                     </table>
-                    <button className="btn btn-primary" onClick={handleCheckout}>Download Inoice</button>
+                    <button className="btn btn-primary" onClick={handlePdfGeneration}>Download Invoice</button>
                     </>
                     )}
                 </div>
-                
             </div>
         </div>
     );

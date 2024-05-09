@@ -1,11 +1,10 @@
 import {useEffect,useState} from 'react';
-import { Link,useNavigate } from 'react-router-dom';
-import { useSelector,useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { removeFromCart, updateQuantity } from '../Redux/actions'
 import AxiosInstance from '../../Axios_instance';
 
 const CartPage = () => {
-  // const cartItems = useSelector(state => state.cart.cartItems);
   const [cartItems, setCartItems] = useState(JSON.parse(localStorage.getItem('cartItems')) || []);
   const [totalPrice, setTotalPrice] = useState(0);
   const axios = AxiosInstance()
@@ -18,27 +17,20 @@ const CartPage = () => {
   };
 
   useEffect(() => {
-    console.log("Current cartItems:", cartItems);
-    
-  }, [cartItems]);
-
-  useEffect(() => {
     const totalPrice = calculateTotalPrice();
     setTotalPrice(totalPrice);
   }, [cartItems]);
 
   // Function to update the quantity of an item in the cart
-const handleQuantityChange = (itemId, newQuantity) => {
-  if (newQuantity > 0) {
-    dispatch(updateQuantity(itemId, newQuantity));
-
-    // Update quantity of the item in the cart
-    const updatedCartItems = cartItems.map(item => {
-      if (item.id === itemId) {
-        return { ...item, quantity: newQuantity };
-      }
-      return item;
-    });
+  const handleQuantityChange = (itemId, newQuantity) => {
+    if (newQuantity > 0) {
+      dispatch(updateQuantity(itemId, newQuantity));
+      const updatedCartItems = cartItems.map(item => {
+        if (item.id === itemId) {
+          return { ...item, quantity: newQuantity };
+        }
+        return item;
+      });
 
     // Update localStorage with the updated cart items and new quantity
     updateCartItemsInLocalStorage(updatedCartItems);
@@ -53,8 +45,8 @@ const handleQuantityChange = (itemId, newQuantity) => {
   }
 };
 
-  // Function to remove an item from the cart
-  const handleRemoveFromCart = (itemId) => {
+    // Function to remove an item from the cart
+    const handleRemoveFromCart = (itemId) => {
     // Dispatch action to remove item from Redux store
     dispatch(removeFromCart(itemId));
     // Update cartItems state and localStorage immediately
@@ -69,36 +61,60 @@ const handleQuantityChange = (itemId, newQuantity) => {
     localStorage.setItem('cartItems', JSON.stringify(items));
     setTotalPrice(calculateTotalPrice(items));
   }
+
   const user_email = localStorage.getItem('email')
+
   const handleCheckout = () => {
+    // First, create the order
     axios
-      .post('createOrder/', { total_price:totalPrice,user_email:user_email }, {
+      .post('createOrder/', { total_price: totalPrice, user_email: user_email }, {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: true
       })
       .then((response) => {
         console.log("Order created Successfully", response.data);
-        localStorage.setItem("order_id",response.data.id)
-        navigateTo('/invoice'); // Assuming navigateTo is a function to navigate to the '/invoice' route
+        const orderId = response.data.id;
+        localStorage.setItem("order_id",orderId)
+
+        // Next, create OrderItem objects for each item in the cart
+        cartItems.forEach(item => {
+          const orderItemData = {
+            order: orderId,
+            product: item.id, // Assuming you have the product id available in the item object
+            quantity: item.quantity,
+            price_at_purchase: item.price
+          };
+
+          // Send request to create OrderItem
+          axios.post('createOrderItem/', orderItemData, {
+            headers: { 'Content-Type': 'application/json' },
+            withCredentials: true
+          })
+          .then((response) => {
+            console.log("OrderItem created Successfully", response.data);
+          })
+          .catch((error) => {
+            console.error('OrderItem creation Failed:', error);
+            // Handle error or show error message
+          });
+        });
+
+        // Finally, navigate to the invoice page
+        navigateTo('/invoice'); 
       })
       .catch((error) => {
         console.error('Order creation Failed:', error);
-  
+
         let errorMessage = 'Order Creation failed. Please try again later.';
-  
+
         if (error.response && error.response.data && error.response.data.error) {
           errorMessage = error.response.data.error;
         }
-  
+
         // Handle error or show error message
       });
   };
   
-
-
-
-  
-
   return (
     <div className="bg0 p-t-75 p-b-85">
       <div className="container">

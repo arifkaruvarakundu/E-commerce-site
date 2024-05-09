@@ -34,7 +34,7 @@ function Navbar() {
             <Link to="/" className="text-white hover:text-gray-300">
               Home
             </Link>
-            <Link to="/services" className="text-white hover:text-gray-300">
+            <Link to="/Home" className="text-white hover:text-gray-300">
               Dashboard
             </Link>
             <Link to="/About" className="text-white hover:text-gray-300">
