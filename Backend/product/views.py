@@ -14,6 +14,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from .tasks import generate_order_report_csv
 from django.http import JsonResponse
+from django.core.mail import EmailMessage
 
 # Create your views here.
 
@@ -114,12 +115,7 @@ class GenerateOrderReportView(View):
             return HttpResponse('Failed to generate order report', status=500)
 
 
-
-
-from django.core.mail import EmailMessage
-from django.template.loader import render_to_string
-
-class GenerateOrderReportView(View):
+class GenerateEmailOrderReportView(View):
     def get(self, request):
         # Trigger Celery task to generate order report asynchronously
         task = generate_order_report_csv.delay()
@@ -131,7 +127,7 @@ class GenerateOrderReportView(View):
             return JsonResponse({'task_id': task.id, 'email_sent': True})
         else:
             return JsonResponse({'task_id': task.id, 'email_sent': False})
-
+    
     def send_email_with_attachment(self, task_id):
         try:
             # Get the CSV file path from the Celery task result
@@ -141,16 +137,12 @@ class GenerateOrderReportView(View):
             # Create email message
             subject = 'Order Report CSV'
             message = 'Please find the attached order report CSV file.'
-            email = EmailMessage(subject, message, 'sender@example.com', ['recipient@example.com'])
+            email = EmailMessage(subject, message, 'nedungadanharif@gmail.com', ['harifn786@gmail.com'])
 
             # Attach the CSV file to the email
             email.attach_file(filename)
 
-            # Optionally, you can customize the email body using a template
-            # email_body = render_to_string('email_template.html', {'task_id': task_id})
-            # email.send()
-
-            # Send the email
+            
             email.send()
 
             return True

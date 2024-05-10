@@ -1,9 +1,18 @@
-import React from 'react';
+import React,{useState,useEffect} from 'react';
 import AxiosInstance from '../../../Axios_instance';
 
 const OrderSalesReport = () => {
-  
     const axios = AxiosInstance();
+    const [csrfToken, setCsrfToken] = useState('');
+
+    useEffect(() => {
+      // Fetch CSRF token from cookies
+      const getCsrfToken = async () => {
+          const response = await axios.get('/csrf/');
+          setCsrfToken(response.data.csrfToken);
+      };
+      getCsrfToken();
+  }, []);
 
     const handleDownloadPDF = () => {
         axios.get('download_order_pdf_sales/', { responseType: 'blob' })
@@ -36,6 +45,21 @@ const OrderSalesReport = () => {
             });
     };
 
+    const handleSendEmail = () => {
+      axios.get('email_csv/', null, {
+        headers: {
+            'X-CSRFToken': csrfToken,
+        },
+        })
+          .then(response => {
+              console.log('CSV sent via email:', response.data);
+              // Optionally, you can show a success message or trigger any other action here
+          })
+          .catch(error => {
+              console.error('Error sending CSV via email:', error);
+          });
+  };
+
     return (
       <div className="container">
       <div className="row justify-content-center mt-5">
@@ -47,6 +71,9 @@ const OrderSalesReport = () => {
                           <button className="btn btn-primary" onClick={handleDownloadPDF}>Download PDF</button>
                           <span style={{ margin: '0 10px' }}></span>
                           <button className="btn btn-primary" onClick={handleDownloadCSV}>Download CSV</button>
+                      </div>
+                      <div className="mt-3">
+                              <button className="btn btn-primary" onClick={handleSendEmail}>Send CSV as Email</button>
                       </div>
                   </div>
               </div>
