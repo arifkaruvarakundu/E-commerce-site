@@ -42,6 +42,21 @@ const OrdersList = () => {
     }
   };
 
+  const downloadOrderCSV = () => {
+    axios.get('report_csv/', { responseType: 'blob' })
+      .then(response => {
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'order_report.csv');
+        document.body.appendChild(link);
+        link.click();
+      })
+      .catch(error => {
+        console.error('Error downloading CSV:', error);
+      });
+  };
+
   if (selectedOrder) {
     return (
       <div className="container">

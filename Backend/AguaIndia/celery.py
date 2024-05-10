@@ -8,8 +8,13 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'AguaIndia.settings')
 
 app = Celery('AguaIndia')
 app.conf.enable_utc = False
+app.conf.update(timezone = 'Asia/Kolkata')
 
 app.config_from_object(settings, namespace='CELERY')
+
+#celery Beat settings
+
+
 
 app.autodiscover_tasks()
 

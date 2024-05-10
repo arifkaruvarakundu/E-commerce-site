@@ -82,7 +82,6 @@ class GenerateOrderPDF(View):
         return response
     
 class DownloadOrderPDFSales(View):
-
     def get(self, request):
         today = timezone.now().date()
         week_ago = today - timedelta(days=7)
