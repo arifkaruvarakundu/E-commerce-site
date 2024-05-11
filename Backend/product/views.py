@@ -15,6 +15,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from .tasks import generate_order_report_csv
 from django.http import JsonResponse
 from django.core.mail import EmailMessage
+from django.contrib.auth.models import User
 
 # Create your views here.
 
@@ -24,11 +25,11 @@ class ProductListView(ListAPIView):
 
 class SignupAPIView(APIView):
     permission_classes = [AllowAny]
-
+    
     def post(self, request, format=None):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
+            serializer.save()
             return Response({"message": "Account created successfully!"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -37,9 +38,8 @@ class LoginAPIView(APIView):
 
     def post(self, request, format=None):
         username = request.data.get('username')
-        print("username:",username)
         password = request.data.get('password')
-        user = authenticate(request, username=username, password=password)
+        user = authenticate(request,username=username, password=password)
         if user is not None:
             login(request, user)
             serializer = UserSerializer(user)

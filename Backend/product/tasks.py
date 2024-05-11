@@ -57,7 +57,7 @@ def generate_order_report_csv():
     for product in top_selling_products_month:
         csv_writer.writerow([product['product__title'], product['total_quantity']])
 
-    SAVE_DIR = '/C:/Users/Admin/Downloads/'
+    SAVE_DIR = 'C:/Users/Admin/Downloads/'
 
     # Construct the absolute path for the CSV file
     filename = os.path.join(SAVE_DIR, 'order_report.csv')
